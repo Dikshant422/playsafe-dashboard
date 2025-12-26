@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PlaySafe Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
+    <style>
+        :root {
+            --color-primary: #00D9FF;
+            --color-primary-light: #33E0FF;
+            --color-primary-dark: #00B8D9;
+            --color-secondary: #2D0A4E;
+            --color-success: #00FF88;
+            --color-warning: #FFD700;
+            --color-error: #FF4D4D;
+            --color-bg: #0A0A1A;
+            --color-surface: #1A1A2E;
+            --color-text: #FFFFFF;
+            --color-text-secondary: #A0A0CC;
+            --color-border: #3A3A5A;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #00D9FF 0%, #2D0A4E 50%, #0A0A1A 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: var(--color-text);
+        }
+
+        .container { max-width: 1200px; margin: 0 auto; }
+
+        header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+            animation: slideDown 0.6s ease-out;
+        }
+
+        header h1 {
+            font-size: 2.8rem;
+            text-shadow: 0 4px 20px rgba(0, 217, 255, 0.4);
+            font-weight: 800;
+            letter-spacing: 1px;
+        }
+
+        /* LARGE STATUS CONTAINER - WRAPS EVERYTHING */
+        .play-safe-container {
+            background: rgba(26, 26, 46, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            padding: 40px;
+            margin-bottom: 30px;
+            box-shadow: 0 25px 80px rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(0, 217, 255, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .play-safe-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--color-success), var(--color-warning), var(--color-error));
+            opacity: 0.7;
+        }
+
+        /* SUBTLE STATUS INDICATOR */
+        .play-safe-status {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 20px;
+            background: rgba(0, 217, 255, 0.05);
+            border-radius: 16px;
+            border: 1px solid rgba(0, 217, 255, 0.15);
+        }
+
+        .status-icon { 
+            font-size: 2.5rem; 
+            margin-bottom: 12px;
+            opacity: 0.9;
+        }
+
+        .status-title { 
+            font-size: 1.6rem; 
+            font-weight: 700; 
+            margin-bottom: 8px;
+            letter-spacing: 1px;
+        }
+
+        .status-message { 
+            font-size: 1rem; 
+            color: var(--color-text-secondary); 
+            font-weight: 500;
+        }
+
+        .status-safe .status-icon { color: var(--color-success); }
+        .status-caution .status-icon { color: var(--color-warning); }
+        .status-danger .status-icon { color: var(--color-error); }
+
+        .controls {
+            display: flex;
+            justify-content: flex-start;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .btn {
+            padding: 12px 16px;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 1.2rem;
+            transition: all 0.3s;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-primary {
+            background: var(--color-primary);
+            color: white;
+            box-shadow: 0 6px 20px rgba(0, 217, 255, 0.3);
+        }
+
+        .btn-primary:hover {
+            background: var(--color-primary-dark);
+            transform: translateY(-4px) scale(1.1);
+            box-shadow: 0 12px 30px rgba(0, 217, 255, 0.4);
+        }
+
+        /* DASHBOARD INSIDE STATUS CONTAINER */
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 24px;
+        }
+
+        .gauge-card {
+            background: rgba(10, 10, 26, 0.6);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 15px 40px rgba(0, 217, 255, 0.1);
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            border: 1px solid rgba(0, 217, 255, 0.2);
+        }
+
+        .gauge-card:hover {
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 25px 60px rgba(0, 217, 255, 0.25);
+            border-color: var(--color-primary);
+        }
+
+        .gauge-card.moisture { border-top: 4px solid var(--color-primary); }
+        .gauge-card.humidity { border-top: 4px solid var(--color-primary-light); }
+
+        .card-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--color-text);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .field-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            box-shadow: 0 4px 12px rgba(0, 217, 255, 0.2);
+        }
+
+        .gauge-container {
+            position: relative;
+            width: 220px;
+            height: 220px;
+            margin: 0 auto 20px;
+        }
+
+        .value-display {
+            text-align: center;
+            font-size: 3.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--color-primary), var(--color-primary-light));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 8px;
+        }
+
+        .value-unit {
+            text-align: center;
+            font-size: 1rem;
+            color: var(--color-text-secondary);
+            margin-bottom: 15px;
+            font-weight: 500;
+        }
+
+        .last-update {
+            text-align: center;
+            font-size: 0.9rem;
+            color: var(--color-text-secondary);
+            padding-top: 15px;
+            border-top: 1px solid var(--color-border);
+        }
+
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .stat {
+            background: rgba(0, 217, 255, 0.08);
+            padding: 15px;
+            border-radius: 12px;
+            text-align: center;
+            border: 1px solid rgba(0, 217, 255, 0.2);
+            backdrop-filter: blur(10px);
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: var(--color-text-secondary);
+            text-transform: uppercase;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+
+        .stat-value {
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: var(--color-primary);
+        }
+
+        @keyframes slideDown { 
+            from { opacity: 0; transform: translateY(-30px); } 
+            to { opacity: 1; transform: translateY(0); } 
+        }
+
+        @media (max-width: 768px) {
+            .play-safe-container { padding: 20px; }
+            header h1 { font-size: 2rem; }
+            .dashboard { grid-template-columns: 1fr; }
+            .status-title { font-size: 1.4rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>⚡ PlaySafe Dashboard</h1>
+            <p>Real-time field condition monitoring</p>
+        </header>
+
+        <!-- LARGE STATUS CONTAINER WITH CARDS INSIDE -->
+        <div class="play-safe-container">
+            <!-- SUBTLE STATUS INDICATOR -->
+            <div id="playSafeStatus" class="play-safe-status status-safe">
+                <div class="status-icon">✅</div>
+                <div class="status-title">PLAY SAFE</div>
+                <div class="status-message">Optimal conditions for sports</div>
+            </div>
+
+            <!-- CONTROLS INSIDE CONTAINER -->
+            <div class="controls">
+                <button class="btn btn-primary" onclick="manualRefresh()" title="Refresh Data">🔄</button>
+            </div>
+
+            <!-- GAUGE CARDS INSIDE STATUS CONTAINER -->
+            <div class="dashboard">
+                <div class="gauge-card moisture" onclick="showDetailedView('moisture')">
+                    <div class="card-title">
+                        <div class="field-icon" style="background: rgba(0, 217, 255, 0.2);">💧</div>
+                        <span>Ground Moisture</span>
+                    </div>
+                    <div class="gauge-container">
+                        <canvas id="gaugeChart1"></canvas>
+                    </div>
+                    <div class="value-display" id="moistureValue">--</div>
+                    <div class="value-unit">%</div>
+                    <div class="stats-container">
+                        <div class="stat">
+                            <div class="stat-label">Min</div>
+                            <div class="stat-value" id="moistureMin">--</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-label">Avg</div>
+                            <div class="stat-value" id="moistureAvg">--</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-label">Max</div>
+                            <div class="stat-value" id="moistureMax">--</div>
+                        </div>
+                    </div>
+                    <div class="last-update" id="moistureTime">Last update: --</div>
+                </div>
+
+                <div class="gauge-card humidity" onclick="showDetailedView('humidity')">
+                    <div class="card-title">
+                        <div class="field-icon" style="background: rgba(0, 217, 255, 0.3);">💨</div>
+                        <span>Air Humidity</span>
+                    </div>
+                    <div class="gauge-container">
+                        <canvas id="gaugeChart2"></canvas>
+                    </div>
+                    <div class="value-display" id="humidityValue">--</div>
+                    <div class="value-unit">%</div>
+                    <div class="stats-container">
+                        <div class="stat">
+                            <div class="stat-label">Min</div>
+                            <div class="stat-value" id="humidityMin">--</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-label">Avg</div>
+                            <div class="stat-value" id="humidityAvg">--</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-label">Max</div>
+                            <div class="stat-value" id="humidityMax">--</div>
+                        </div>
+                    </div>
+                    <div class="last-update" id="humidityTime">Last update: --</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const CONFIG = {
+            CHANNEL_ID: '3213452',
+            API_KEY: '91WF0YRLVG0V5KKF',
+            FIELD_MOISTURE: 'field1',
+            FIELD_HUMIDITY: 'field2',
+            REFRESH_INTERVAL: 30000,
+            DATA_POINTS: 20
+        };
+
+        let state = { moistureData: [], humidityData: [], charts: {} };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initGauges();
+            fetchData();
+            setInterval(fetchData, CONFIG.REFRESH_INTERVAL);
+        });
+
+        function initGauges() {
+            ['moisture', 'humidity'].forEach((type, i) => {
+                const canvas = document.getElementById(`gaugeChart${i+1}`);
+                state.charts[type] = new Chart(canvas, {
+                    type: 'doughnut',
+                    data: { datasets: [{ data: [0, 100], backgroundColor: ['#00D9FF', 'rgba(45,10,78,0.3)'] }] },
+                    options: { 
+                        responsive: true, 
+                        cutout: '75%', 
+                        plugins: { legend: { display: false } },
+                        animation: { duration: 1000 }
+                    }
+                });
+            });
+        }
+
+        async function fetchData() {
+            try {
+                const res = await fetch(`https://api.thingspeak.com/channels/${CONFIG.CHANNEL_ID}/feeds.json?api_key=${CONFIG.API_KEY}&results=${CONFIG.DATA_POINTS}`);
+                const data = await res.json();
+                
+                if (data.feeds?.length) {
+                    const feeds = data.feeds.reverse();
+                    state.moistureData = feeds.map(f => parseFloat(f[CONFIG.FIELD_MOISTURE]) || 0);
+                    state.humidityData = feeds.map(f => parseFloat(f[CONFIG.FIELD_HUMIDITY]) || 0);
+                    updateDashboard();
+                }
+            } catch (e) {
+                console.error('Fetch failed:', e);
+            }
+        }
+
+        function updateDashboard() {
+            const moisture = state.moistureData.slice(-1)[0] || 0;
+            const humidity = state.humidityData.slice(-1)[0] || 0;
+            
+            // Update values
+            document.getElementById('moistureValue').textContent = moisture.toFixed(1);
+            document.getElementById('humidityValue').textContent = humidity.toFixed(1);
+            
+            // Update gauges
+            state.charts.moisture.data.datasets[0].data = [moisture, 100-moisture];
+            state.charts.humidity.data.datasets[0].data = [humidity, 100-humidity];
+            state.charts.moisture.update('none');
+            state.charts.humidity.update('none');
+            
+            // Update PlaySafe status
+            updatePlaySafeStatus(moisture, humidity);
+        }
+
+        function updatePlaySafeStatus(moisture, humidity) {
+            const statusEl = document.getElementById('playSafeStatus');
+            let statusClass, icon, title, message;
+
+            // PlaySafe Logic
+            if (moisture < 25 || moisture > 75 || humidity > 85) {
+                statusClass = 'status-danger';
+                icon = '❌';
+                title = 'NO PLAY';
+                message = 'Field too wet/dry or air too humid';
+            } else if (moisture < 35 || moisture > 65
