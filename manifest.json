@@ -1,0 +1,12 @@
+{
+  "background_color": "#0a0a1a",
+  "dir": "ltr",
+  "display": "standalone",
+  "name": "PlaySafe",
+  "orientation": "any",
+  "scope": "/",
+  "short_name": "PlaySafe",
+  "start_url": "/playsafe-dashboard/",
+  "theme_color": "#00d9ff",
+  "description": "Real-time field condition monitoring dashboard."
+}
